@@ -164,8 +164,7 @@ class netease {
     const nnidName = '_ntes_nnid';
     const nuidValue = this._create_secret_key(32);
     const nnidValue = `${nuidValue},${new Date().getTime()}`;
-    const nmtidName = 'NMTID';
-    const nmtidValue = '0';
+    const musicuName = 'MUSIC_U';
 
     // netease default cookie expire time: 100 years
     const expire =
@@ -174,43 +173,44 @@ class netease {
       [
         { url: domain, name: nuidName },
         { url: domain, name: nnidName },
-        { url: domain, name: nmtidName },
+        { url: domain, name: musicuName },
       ],
       (item, cb) => {
         cookieGet(item, (result) => cb(null, result));
       },
       (_, results) => {
-        if (results.filter((i) => i === null).length > 0) {
-          async.concat(
-            [
-              {
-                url: domain,
-                name: nuidName,
-                value: nuidValue,
-                expirationDate: expire,
-                sameSite: 'no_restriction',
-              },
-              {
-                url: domain,
-                name: nnidName,
-                value: nnidValue,
-                expirationDate: expire,
-                sameSite: 'no_restriction',
-              },
-              {
-                url: domain,
-                name: nmtidName,
-                value: nmtidValue,
-                expirationDate: expire,
-                sameSite: 'no_restriction',
-              },
-            ],
-            cookieSet,
-            () => {
-              callback(null);
-            }
-          );
-        }
+        if (results.filter((i) => i === null || i.sameSite !== 'no_restriction').length === 0) return;
+        const musicu = results.filter((i) => i !== null && i.name === musicuName && i.value);
+        if (musicu.length === 0) return;
+        async.concat(
+          [
+            {
+              url: domain,
+              name: nuidName,
+              value: nuidValue,
+              expirationDate: expire,
+              sameSite: 'no_restriction',
+            },
+            {
+              url: domain,
+              name: nnidName,
+              value: nnidValue,
+              expirationDate: expire,
+              sameSite: 'no_restriction',
+            },
+            {
+              url: domain,
+              name: musicuName,
+              value: musicu[0].value,
+              expirationDate: expire,
+              sameSite: 'no_restriction',
+            },
+          ],
+          cookieSet,
+          () => {
+            callback(null);
+          }
+        );
       }
     );
   }
@@ -920,7 +920,7 @@ class netease {
     const encrypt_req_data = this.weapi({});
     return {
       success: (fn) => {
-        axios.post(url, new URLSearchParams(encrypt_req_data)).then((res) => {
+        this.ne_ensure_cookie(() => axios.post(url, new URLSearchParams(encrypt_req_data)).then((res) => {
           let result = { is_login: false };
           let status = 'fail';
           if (res.data.account !== null) {
@@ -941,7 +941,7 @@ class netease {
             status,
             data: result,
           });
-        });
+        }));
       },
     };
   }
