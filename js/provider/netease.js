@@ -161,7 +161,7 @@ class netease {
   static ne_ensure_cookie(callback) {
     const domain = 'https://music.163.com';
     const nuidName = '_ntes_nuid';
-    const nnidName = '_ntes_nnid3';
+    const nnidName = '_ntes_nnid';
     const nuidValue = this._create_secret_key(32);
     const nnidValue = `${nuidValue},${new Date().getTime()}`;
     const nmtidName = 'NMTID';
